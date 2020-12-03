@@ -68,6 +68,11 @@
 #include <asm/pgtable.h>
 #include <asm/mmu_context.h>
 
+#ifdef CONFIG_S2E
+#include <s2e/s2e.h>
+#include <s2e/linux/linux_monitor.h>
+#endif
+
 static void __unhash_process(struct task_struct *p, bool group_dead)
 {
 	nr_threads--;
@@ -919,6 +924,17 @@ void __noreturn do_exit(long code)
 		__this_cpu_add(dirty_throttle_leaks, tsk->nr_dirtied);
 	exit_rcu();
 	exit_tasks_rcu_finish();
+
+#ifdef CONFIG_S2E
+	if (s2e_linux_monitor_enabled) {
+#ifdef CONFIG_DEBUG_S2E
+	    s2e_printf("detected process %s exit with code %ld\n",
+		    tsk->comm,
+		    tsk->exit_code);
+#endif
+	    s2e_linux_process_exit(tsk->pid, tsk->exit_code);
+	}
+#endif
 
 	lockdep_free_task(tsk);
 	do_task_dead();

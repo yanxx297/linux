@@ -451,6 +451,10 @@ fail:
 	return error;
 }
 
+#ifdef CONFIG_S2E
+#include <s2e/linux/linux_monitor.h>
+#endif
+
 /*
  * pkey==-1 when doing a legacy mprotect()
  */
@@ -578,7 +582,14 @@ out:
 SYSCALL_DEFINE3(mprotect, unsigned long, start, size_t, len,
 		unsigned long, prot)
 {
-	return do_mprotect_pkey(start, len, prot, -1);
+        int ret = do_mprotect_pkey(start, len, prot, -1);
+
+#ifdef CONFIG_S2E
+        if (s2e_linux_monitor_enabled && !ret) {
+                s2e_linux_mprotect(current->pid, start, len, prot);
+        }
+#endif
+        return ret;
 }
 
 #ifdef CONFIG_ARCH_HAS_PKEYS
@@ -586,7 +597,14 @@ SYSCALL_DEFINE3(mprotect, unsigned long, start, size_t, len,
 SYSCALL_DEFINE4(pkey_mprotect, unsigned long, start, size_t, len,
 		unsigned long, prot, int, pkey)
 {
-	return do_mprotect_pkey(start, len, prot, pkey);
+        int ret = do_mprotect_pkey(start, len, prot, pkey);
+
+#ifdef CONFIG_S2E
+        if (s2e_linux_monitor_enabled && !ret) {
+                s2e_linux_mprotect(current->pid, start, len, prot);
+        }
+#endif
+        return ret;
 }
 
 SYSCALL_DEFINE2(pkey_alloc, unsigned long, flags, unsigned long, init_val)

@@ -42,6 +42,10 @@
 #include <linux/posix-timers.h>
 #include <linux/livepatch.h>
 
+#ifdef CONFIG_S2E
+#include <s2e/linux/linux_monitor.h>
+#endif
+
 #define CREATE_TRACE_POINTS
 #include <trace/events/signal.h>
 
@@ -1534,6 +1538,18 @@ int force_sig_fault(int sig, int code, void __user *addr
 	, struct task_struct *t)
 {
 	struct kernel_siginfo info;
+
+#ifdef CONFIG_S2E
+	if (s2e_linux_monitor_enabled) {
+#ifdef CONFIG_DEBUG_S2E
+	    s2e_printf("SEGFAULT at 0x%lx\n", task_pt_regs(t)->ip);
+#endif
+	    s2e_linux_segfault(current->pid,
+		    task_pt_regs(t)->ip,
+		    addr,
+		    VM_FAULT_ERROR);
+	}
+#endif
 
 	clear_siginfo(&info);
 	info.si_signo = sig;

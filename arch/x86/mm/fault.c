@@ -29,6 +29,11 @@
 #include <asm/efi.h>			/* efi_recover_from_page_fault()*/
 #include <asm/desc.h>			/* store_idt(), ...		*/
 
+#ifdef CONFIG_S2E
+#include <s2e/s2e.h>
+#include <s2e/linux/linux_monitor.h>
+#endif
+
 #define CREATE_TRACE_POINTS
 #include <asm/trace/exceptions.h>
 
